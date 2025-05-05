@@ -1,0 +1,190 @@
+// Coefficients of the VarUP problem
+complex a,b,c,d;
+a=rhof/rhom;
+b=om^2*(rho-rhof^2/rhom);
+c=om^2*rhom/M;
+d=-om^2*(rhof-beta*rhom);
+
+//a=1;b=1;c=1;d=1;
+cout << "---------- VarUP Coefficients ----------" << endl;
+cout << "a = " << a << ", b = " << b << endl << "c = " << c << ", d = " << d << endl;
+cout << "|c|=" << abs(c) << " |d|=" << abs(d) << endl;
+
+// Problem
+real timer;
+
+
+
+// Initialisation
+real CoarserCoeff = .2; // Multiply MeshPerLambdas for Initialization
+if(BoolCrack==1){
+  int CoarserMeshPerLambdas = CoarserCoeff*MeshPerLambdas;
+  int[int] CoarseNbMeshExt = CoarserCoeff*MeshPerLambdas/lambdas*[DomainDepth,DomainWidth,DomainHeight];
+  cout << "Coarse: " << CoarseNbMeshExt << endl;
+  meshS ThExt = SurfaceHex(CoarseNbMeshExt, Domain, LExt, 1);
+  meshS ThCrack = AddCracks(NbCracks,MeshPerLambdas,CrackCenters,CrackDimensions,CrackOrientations,cracklabel);
+  meshS ThS = ThExt+ThCrack;
+  real[int] hole(3*CrackCenters.n);
+  int iterhole=0;
+  for(int i=0;i<CrackCenters.n;i++){
+    for(int j=0;j<3;j++){
+
+      hole(iterhole) = CrackCenters(i,j);
+      iterhole+=1;
+    }
+  }
+  real[int] domain = [0.49*DomainDepth,0.49*DomainWidth, 0.49*DomainHeight, 54, .001];
+  Th = tetg(ThS, switch="paAAQYY",
+      nbofholes=CrackCenters.n, holelist=hole, nbofregions=1, regionlist=domain);
+  }
+else if(BoolCrack==0){
+  Th = cube(CoarserCoeff*NbMeshExt(0),CoarserCoeff*NbMeshExt(1),CoarserCoeff*NbMeshExt(2),
+  [DomainDepth*(x-.5),DomainWidth*(y-.5),DomainHeight*(z-.5)],
+  label=l6
+  );
+  }
+
+plot(Th,wait=1,cmm="Initialisation Mesh");
+
+// solutions u and p
+fespace Vh(Th,P1);
+Vh PlotTemp;
+fespace Xh(Th,[P1,P1,P1,P1]);
+Xh<complex> [ux, uy, uz, p], [uux, uuy, uuz, pp];
+
+// Allocation of Source terms
+Vh f1x = 0;
+Vh f1y = 0;
+Vh f1z = 0;
+Vh f2x = 0;
+Vh f2y = 0;
+Vh f2z = 0;
+
+
+Vh<complex> F1x,F1y,F1z;
+Vh F2;
+real DiracAmplitude = 1;
+real DiracMagnitude = 1000;
+f1z = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x)^2+(y)^2+(z)^2));
+F1z = f1z-rhof/rhom*f2z;
+
+plot(f1z,wait=1);
+
+
+timer = clock();
+cout << "------- Initialisation ---------" << endl;
+problem Init([ux,uy,uz,p],[uux,uuy,uuz,pp])
+  = int3d(Th)(
+    // Equation for u
+      lambda*div(ux,uy,uz)*conj(div(uux,uuy,uuz))
+    + 2.*mu*(epsilon(uux,uuy,uuz)'*epsilon(ux,uy,uz))
+    - beta*p*conj(div(uux,uuy,uuz))
+    - a*(dx(p)*conj(uux)+dy(p)*conj(uuy)+dz(p)*conj(uuz))
+    - b*(ux*conj(uux)+uy*conj(uuy)+uz*conj(uuz))
+  // Equation for p
+    + dx(p)*conj(dx(pp))+dy(p)*conj(dy(pp))+dz(p)*conj(dz(pp))
+    - c*p*conj(pp)
+    - d*div(ux,uy,uz)*conj(pp)
+    )
+    - int3d(Th)(F1x*conj(uux)+F1y*conj(uuy)+F1z*conj(uuz) - F2*conj(pp))
+  + on(ExtCond,cracklabel,p=0)
+  ;
+
+//Init;
+cout << "time:" << clock() - timer << endl;
+cout << "1) Attention!: Xh.n: " << Xh.ndof << ", ux.n:  " << ux.n << endl;
+///////////////// End of initialisation /////////////
+
+PlotTemp = real(uz);
+plot(PlotTemp,wait=1,cmm="coarse uz");
+
+Th = Th1;
+cout << "2) Attention!: Xh.n: " << Xh.ndof << ", ux.n:  " << ux.n << endl;
+
+// Problem
+varf VarUP([ux,uy,uz,p],[uux,uuy,uuz,pp])
+  = int3d(Th)(
+    // Equation for u
+      lambda*div(ux,uy,uz)*conj(div(uux,uuy,uuz))
+    + 2.*mu*(epsilon(uux,uuy,uuz)'*epsilon(ux,uy,uz))
+    - beta*p*conj(div(uux,uuy,uuz))
+    - a*(dx(p)*conj(uux)+dy(p)*conj(uuy)+dz(p)*conj(uuz))
+    - b*(ux*conj(uux)+uy*conj(uuy)+uz*conj(uuz))
+  // Equation for p
+    + dx(p)*conj(dx(pp))+dy(p)*conj(dy(pp))+dz(p)*conj(dz(pp))
+    - c*p*conj(pp)
+    - d*div(ux,uy,uz)*conj(pp)
+    )
+    + on(ExtCond,cracklabel,p=0)
+    ;
+matrix<complex> A = VarUP(Xh,Xh,solver=GMRES,eps=1e-3,nbiter=5000);//precise solver here.
+
+
+
+varf SourceTerm([ux,uy,uz,p],[uux,uuy,uuz,pp])
+  = int3d(Th)(F1x*conj(uux)+F1y*conj(uuy)+F1z*conj(uuz) - F2*conj(pp))
+  + on(ExtCond,cracklabel,p=0)
+  ;
+complex[int] Y = SourceTerm(0,Xh);
+complex[int] X(Xh.ndof);
+[ux,uy,uz,p] = [ux,uy,uz,p]; // recompute on finer mesh!
+
+PlotTemp = real(uz);
+plot(PlotTemp,wait=1,cmm="fine uz");
+
+
+//X = ux[]; // non efficace
+
+cout << "3) Attention!: Xh.n: " << Xh.ndof << ", X.n:  " << X.n << endl;
+//this previous line stands for the initialisation of vector X!
+// Attention! Il faut être sur que ux a bien changé de dimensions!!!!
+// ce n'est pas automatique apres Th = Th1!!
+// la ligne [ux,uy,uz,p]=[ux,uy,uz,p] est nécessaire.
+
+
+complex[int] Temp(Xh.ndof);
+func real Error(bool RelOrNot){
+  Temp = A*X;
+  Temp = Temp - Y;
+  real error =sqrt(real(Temp'*Temp));
+  if(RelOrNot==1){
+    Temp = Y;
+    error=error/sqrt(real(Temp'*Temp));
+  }
+  return error;
+}
+
+
+timer = clock();
+cout << "-------- first GMRES --------" << endl;
+X = A^-1 * Y;
+cout << "Error=" << Error(1)<<endl;
+cout << "VarUP, time/Emitter:" << clock() - timer << endl;
+ux[]=X; //This mysteriously also copies the solutions uy,uz,p.
+
+
+PlotTemp = real(uz);
+plot(PlotTemp,wait=1);
+
+PlotTemp = real(p);
+plot(PlotTemp,wait=1);
+
+/// Second resolution
+f1z = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x)^2+(y+lambdas/5)^2+(z)^2));
+F1z = f1z-rhof/rhom*f2z;
+plot(f1z,wait=1);
+Y = SourceTerm(0,Xh);
+
+X = ux[];
+timer = clock();
+cout << "-------- second GMRES --------" << endl;
+X = A^-1 * Y;
+cout << "Error=" << Error(1)<<endl;
+cout << "VarUP, second resolution: time/Emitter:" << clock() - timer << endl;
+ux[]=X; //This mysteriously also copies the solutions uy,uz,p.
+
+PlotTemp = real(uz);
+plot(PlotTemp,wait=1);
+
+PlotTemp = real(p);
+plot(PlotTemp,wait=1);

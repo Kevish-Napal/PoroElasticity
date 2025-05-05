@@ -1,0 +1,59 @@
+// Coefficients of the VarUP problem
+complex a,b,c,d;
+a=rhof/rhom;
+b=om^2*(rho-rhof^2/rhom);
+c=om^2*rhom/M;
+d=-om^2*(rhof-beta*rhom);
+
+//a=1;b=1;c=1;d=1;
+// cout << "---------- VarUP Coefficients ----------" << endl;
+// cout << "a = " << a << ", b = " << b << endl << "c = " << c << ", d = " << d << endl;
+// cout << "|c|=" << abs(c) << " |d|=" << abs(d) << endl;
+
+
+
+// solutions u and p
+fespace Vh(Th,P1);
+Vh PlotTemp;
+fespace Xh(Th,[P1,P1,P1,P1]);
+Xh<complex> [ux, uy, uz, p], [uux, uuy, uuz, pp];
+
+// Allocation of Source terms
+Vh f1x = 0;
+Vh f1y = 0;
+Vh f1z = 0;
+Vh f2x = 0;
+Vh f2y = 0;
+Vh f2z = 0;
+
+Vh<complex> F1x,F1y,F1z,wx,wy,wz;
+Vh F2;
+
+
+// Problem
+varf VarUP([ux,uy,uz,p],[uux,uuy,uuz,pp])
+  = int3d(Th)(
+    // Equation for u
+      lambda*div(ux,uy,uz)*conj(div(uux,uuy,uuz))
+    + 2.*mu*(epsilon(uux,uuy,uuz)'*epsilon(ux,uy,uz))
+    - beta*p*conj(div(uux,uuy,uuz))
+    - a*(dx(p)*conj(uux)+dy(p)*conj(uuy)+dz(p)*conj(uuz))
+    - b*(ux*conj(uux)+uy*conj(uuy)+uz*conj(uuz))
+  // Equation for p
+    + dx(p)*conj(dx(pp))+dy(p)*conj(dy(pp))+dz(p)*conj(dz(pp))
+    - c*p*conj(pp)
+    - d*div(ux,uy,uz)*conj(pp)
+    )
+    + on(ExtCond,cracklabel,p=0)
+    ;
+timer = clock();
+matrix<complex> A = VarUP(Xh,Xh);//precise solver here.
+cout << "Matrix A computation: " << clock() - timer <<endl;
+
+varf SourceTerm([ux,uy,uz,p],[uux,uuy,uuz,pp])
+  = int3d(Th)(F1x*conj(uux)+F1y*conj(uuy)+F1z*conj(uuz) - F2*conj(pp))
+  + on(ExtCond,cracklabel,p=0)
+  ;
+
+complex[int] Y(Xh.ndof);
+complex[int] X(Xh.ndof);

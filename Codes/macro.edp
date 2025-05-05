@@ -1,0 +1,70 @@
+// Macro
+real sqrt2 = sqrt(2.);
+macro epsilon(u1, u2, u3) [dx(u1), dy(u2), dz(u3), (dy(u1)+dx(u2)+dz(u3))/sqrt2] // EOM
+// Remark: the 1/sqrt2 term in (dy(u1)+dx(u2)) is here
+// to obtain a 1/2 when we use epsilon(u1, u2)'*epsilon(v1, v2)
+macro div(u, v, w) (dx(u) + dy(v) + dz(w)) // EOM
+macro puw(ux,uy,uz,wx,wy,wz) (-beta*M*div(ux,uy)-M*div(wx,wy)) //
+macro Norm(u1,u2,u3) real(sqrt(u1*conj(u1)+u2*conj(u2)+u3*conj(u3)))//
+
+func real Dirac3(real r)
+{
+  return 1/pi^1.5*exp(-r);
+}
+
+// Some ellipses to stabilize the meshing of the cracks
+func real EllipseX(real CX, real ax, real ay, real theta,real t)
+{
+  return ax*cos(theta)*cos(t)-ay*sin(theta)*sin(t)+CX;
+}
+func real EllipseY(real CY, real ax, real ay, real theta,real t)
+{
+  return ax*sin(theta)*cos(t)+ay*cos(theta)*sin(t)+CY;
+}
+
+
+func int[int] EuclidianDivision(int a, int b) // a = bq+r
+{
+    //
+  int r=a;
+  int q=0;
+  int[int] output(2);
+  while (r>=b)
+  {
+    r = r-b;
+    q = q+1;
+  }
+
+  output(0)=q; output(1)=r;
+
+  return output;
+}
+
+func int isodd(int a)
+{
+  int[int] temp(2);
+  temp = EuclidianDivision(a,2);
+  return temp(1);
+}
+
+func int iseven(int a)
+{
+  return 1-isodd(a);
+}
+
+func real[int] linspace(real xmin, real xmax, int Nbx)
+{
+  real ddx = (xmax-xmin)/(Nbx-1);
+  real[int] xx = xmin:ddx:xmax;
+  return xx;
+}
+
+func real sum(real[int] & V)
+{
+  real s=0;
+  for(int i=0;i<V.n; i++)
+  {
+    s+=V(i);
+  }
+  return s;
+}

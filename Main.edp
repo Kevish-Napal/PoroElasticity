@@ -1,0 +1,25 @@
+load "MUMPS"
+include "../Lib/ffmatlib.idp"
+load "msh3"
+load "tetgen"
+include "MeshSurface.idp"
+include "cube.idp"
+
+string[int] SourceType = ["XDisplacementSource","YDisplacementSource","ZDisplacementSource","FluidSource"];
+int ChooseSourceType=2; // Choose between 0,1,2,3.
+
+int EmitterBegin = 0;
+int EmitterEnd = 0;
+
+// Show Plots?
+int PlotFlag = 1;
+real timer;
+
+// List Of Meshes of Convergence Analysis
+int MeshPerLambdas = 20; // 20 // the elements of the list Meshes in the CVAnalysis loop.2
+include "Codes/Parameters.edp"
+include "Codes/macro.edp"
+include "Codes/Geometry.edp"
+include "Codes/VarUP.edp"
+include "Codes/DataGen.edp"
+include "Codes/plots.edp"

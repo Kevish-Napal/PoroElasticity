@@ -1,0 +1,64 @@
+// Plots
+
+Vh PlotTemp;
+
+if(PlotFlag == 1)
+{
+
+  PlotTemp = real(ux);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(ux)",ps="RUX.eps");
+
+  PlotTemp = imag(ux);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(ux)");
+
+  PlotTemp = real(uy);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(uy)");
+
+  PlotTemp = imag(uy);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(uy)");
+
+  PlotTemp = real(uz);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(uz)");
+
+  PlotTemp = imag(uz);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(uz)");
+
+
+  PlotTemp = real(p);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(p)");
+
+  PlotTemp = imag(p);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(p)");
+
+  PlotTemp = real(wx);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(wx)");
+
+  PlotTemp = imag(wx);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(wx)");
+
+  PlotTemp = real(wy);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(wy)");
+
+  PlotTemp = imag(wy);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(wy)");
+
+  PlotTemp = real(wz);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Real(wz)");
+
+  PlotTemp = imag(wz);
+  plot(PlotTemp,wait=1,fill=1,value=1,cmm="Image(wz)");
+
+  // Sources terms
+  plot(f1x,wait =1,fill=1,cmm="f1x");
+  plot(f1y,wait =1,fill=1,cmm="f1y");
+  plot(f2x,wait =1,fill=1,cmm="f2x");
+  plot(f2y,wait =1,fill=1,cmm="f2y");
+
+  PlotTemp = abs(F1x);
+  plot(PlotTemp,wait =1,fill=1,cmm="F1x");
+
+  PlotTemp = abs(F1y);
+  plot(PlotTemp,wait =1,fill=1,cmm="F1y");
+
+  plot(F2,wait =1,fill=1,cmm="F2");
+} // EO plots

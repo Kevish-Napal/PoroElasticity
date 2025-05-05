@@ -1,0 +1,231 @@
+// Exterior Domain
+int ExtCond = 99;
+real DomainHeight = 3.55*lambdas;//3.55
+real DomainWidth = 6*lambdas;//6
+real DomainDepth =1.45*lambdas;//1.45
+cout << "Dimensions: " << DomainHeight << " X " << DomainWidth << " X " << DomainDepth<<endl;
+real [int,int] Domain = 1./2.*[[-DomainDepth, DomainDepth], [-DomainWidth, DomainWidth], [-DomainHeight, DomainHeight]];
+int[int] NbMeshExt = MeshPerLambdas/lambdas*[DomainDepth,DomainWidth,DomainHeight];
+int [int,int] LExt = [[ExtCond, ExtCond], [ExtCond, ExtCond], [ExtCond, ExtCond]];
+int[int] l6 = ExtCond*[1,1,1,1,1,1];
+mesh3 Th;
+
+bool BoolCrack = 0;
+
+// ////////////// Sensors box ////////////////
+real SensorHeight = DomainHeight - 1.5*lambdas;//-1.5
+real SensorWidth = DomainWidth - 2.0*lambdas;//-2
+real SensorDepth = DomainDepth - .45*lambdas;//-.45
+real[int,int] Sensors = 1./2.*[[-SensorDepth, SensorDepth], [-SensorWidth, SensorWidth], [-SensorHeight, SensorHeight]];
+int[int] NbMeshSensors = 2*[SensorDepth,SensorWidth,SensorHeight];
+
+
+
+// ////////////// Sampling box ////////////////
+real SamplingHeight = 1.3*lambdas;//
+real SamplingWidth = 4.*lambdas;//
+real SamplingDepth = .7*lambdas;//
+real[int,int] Sampling = 1./2.*[[-SamplingDepth, SamplingDepth], [-SamplingWidth, SamplingWidth], [-SamplingHeight, SamplingHeight]];
+int[int] NbMeshSampling = 2*[SamplingDepth,SamplingWidth,SamplingHeight];
+
+
+
+
+////////////////// Sensors on the sensor box //////////////////////
+int NSensorTemp;
+NSensorTemp = ceil(SensorDepth*10/lambdas);
+NSensorTemp = NSensorTemp + iseven(NSensorTemp);
+real[int] ZX = linspace(-.5*SensorDepth,.5*SensorDepth,NSensorTemp);
+
+NSensorTemp = ceil(SensorWidth*10/lambdas);
+NSensorTemp = NSensorTemp + iseven(NSensorTemp);
+real[int] ZY = linspace(-.5*SensorWidth,.5*SensorWidth,NSensorTemp);
+
+NSensorTemp = ceil(SensorHeight*10/lambdas);
+NSensorTemp = NSensorTemp + iseven(NSensorTemp);
+real[int] ZZ = linspace(-.5*SensorHeight,.5*SensorHeight,NSensorTemp);
+
+int NbSensor=0;
+for(int ix=0; ix<ZX.n; ix++)
+{
+  for(int iy=0; iy<ZY.n; iy++)
+  {
+    for(int iz=0; iz<ZZ.n; iz++)
+    {
+      if(ix*(ZX.n-ix-1)*iy*(ZY.n-iy-1)*iz*(ZZ.n-iz-1)==0)
+      {
+        NbSensor+=1;
+      }
+    }
+  }
+}
+
+//////// Sensors on horizontal plane inside
+NSensorTemp = ceil((SensorDepth-2*lambdas/5)*10/lambdas);
+NSensorTemp = NSensorTemp + iseven(NSensorTemp);
+real[int]ZHX = linspace(-.5*(SensorDepth-2*lambdas/5),.5*(SensorDepth-2*lambdas/5),NSensorTemp);
+
+NSensorTemp = ceil((SensorWidth-2*lambdas/5)*10/lambdas);
+NSensorTemp = NSensorTemp + iseven(NSensorTemp);
+real[int]ZHY = linspace(-.5*(SensorWidth-2*lambdas/5),.5*(SensorWidth-2*lambdas/5),NSensorTemp);
+
+NbSensor += ZHX.n*ZHY.n;
+
+
+int NbReceptor = NbSensor;
+real[int,int] SensorList(NbSensor,4);
+NbSensor =0;
+for(int ix=0; ix<ZX.n; ix++)
+{
+  for(int iy=0; iy<ZY.n; iy++)
+  {
+    for(int iz=0; iz<ZZ.n; iz++)
+    {
+      if(ix*(ZX.n-ix-1)*iy*(ZY.n-iy-1)*iz*(ZZ.n-iz-1)==0)
+      {
+        SensorList(NbSensor,0) = iseven(ix)*iseven(iy)*iseven(iz);
+        SensorList(NbSensor,1) = ZX(ix);
+        SensorList(NbSensor,2) = ZY(iy);
+        SensorList(NbSensor,3) = ZZ(iz);
+        NbSensor+=1;
+      }
+    }
+  }
+}
+
+for(int ihx=0;ihx<ZHX.n;ihx++)
+{
+  for(int ihy=0;ihy<ZHY.n;ihy++)
+  {
+    SensorList(NbSensor,0) = iseven(ihx)*iseven(ihy);
+    SensorList(NbSensor,1) = ZHX(ihx);
+    SensorList(NbSensor,2) = ZHY(ihy);
+    SensorList(NbSensor,3) = 0;
+    NbSensor+=1;
+  }
+}
+
+{
+ofstream fileout("SensorList.dat");
+fileout << SensorList;
+}
+
+int NbSensorCoarse = sum(SensorList(:,0));
+real[int,int] CoarseSensorList(NbSensorCoarse,3);
+NbSensorCoarse =0;
+for(int i=0;i<SensorList.n;i++)
+{
+  if(SensorList(i,0)==1)
+  {
+    CoarseSensorList(NbSensorCoarse,:)=SensorList(i,1:3);
+    NbSensorCoarse+=1;
+  }
+}
+
+///////////////////// Sampling points //////////////
+real[int] Z1 = (-.5*SamplingDepth):(lambdas/5.):(.5*SamplingDepth);
+real[int] Z2 = (-.5*SamplingWidth):(lambdas/5.):(.5*SamplingWidth);
+real[int] Z3 = (-.5*SamplingHeight):(lambdas/5.):(.5*SamplingHeight);
+
+real[int,int] Z(Z1.n*Z2.n*Z3.n,3);
+int NbSamplingPoints = 0;
+for(int ix=0; ix<Z1.n; ix++)
+{
+  for(int iy=0; iy<Z2.n; iy++)
+  {
+    for(int iz=0; iz<Z3.n; iz++)
+    {
+        Z(NbSamplingPoints,0) = Z1(ix);
+        Z(NbSamplingPoints,1) = Z2(iy);
+        Z(NbSamplingPoints,2) = Z3(iz);
+        NbSamplingPoints+=1;
+    }
+  }
+}
+
+{
+ofstream fileoutput("RHSSamplingPoints.dat");
+fileoutput << Z;
+} ;
+
+cout << "Geometry with Cracks?: " << BoolCrack << endl << endl;
+cout << "Emitters Range: " << "0 - " << Z.n-1 << endl;
+cout << "EmitterBegin: " << EmitterBegin << " - EmitterEnd: " << EmitterEnd << endl;
+cout << "-------------------------------" << endl<<endl;
+
+
+// Cracks
+real[int,int] CrackCenters=[[0,-1,-.5],[0,.7,.47],[0,0,0]]; // Cracks center positions.
+int  NbCracks = CrackCenters.n;
+real[int,int] CrackOrientations = [[pi/20,0,0],[0,0,0],[pi/7,0,0]]; // rotate around Ox, Oy, Oz respectively.
+real[int,int] CrackDimensions = lambdas*[[.7,2,.05],[1.,2.2,.05],[.7,1.8,.05]]; // x,y,z dimensions.
+int cracklabel = 98;
+
+func meshS AddCracks(int NbCracks,int MeshPerLambda,real[int,int] CrackCenters,
+  real[int,int] CrackDimensions,real[int,int] CrackOrientations,int cracklabel)
+{
+  int iterAdd = 0;
+  real Rot;
+  real[int] RotateCrack(3),Dim(3),Centers(3);
+  int[int] NbMeshCrack(3);
+  int [int,int] LCrack = cracklabel*[[1, 1], [1, 1], [1, 1]];
+  real [int,int] Crack(3,2);
+  meshS ThCrack;
+  meshS ThCrackFinal;
+  while(iterAdd<NbCracks){
+    RotateCrack = CrackOrientations(iterAdd,:);
+    Dim = CrackDimensions(iterAdd,:);
+    Centers = CrackCenters(iterAdd,:);
+    Crack = 1./2.*[[-Dim(0), Dim(0)], [-Dim(1), Dim(1)], [-Dim(2), Dim(2)]];
+    NbMeshCrack = MeshPerLambda/lambdas*[Dim(0),Dim(1),Dim(2)];
+    ThCrack = SurfaceHex(NbMeshCrack, Crack, LCrack, -1);
+    // Rot around z
+    Rot = RotateCrack(2);
+    ThCrack = movemesh(ThCrack,[x*cos(Rot)-y*sin(Rot),x*sin(Rot)+y*cos(Rot),z]);
+    // Rot around x
+    Rot = RotateCrack(0);
+    ThCrack = movemesh(ThCrack,[x,y*cos(Rot)-z*sin(Rot),y*sin(Rot)+z*cos(Rot)]);
+    // Rot around y
+    Rot = RotateCrack(1);
+    ThCrack = movemesh(ThCrack,[x*cos(Rot)+z*sin(Rot),y*cos(Rot)-z*sin(Rot),z*cos(Rot)-x*sin(Rot)]);
+    // Translate to CrackCenters
+    ThCrack = movemesh(ThCrack,[x+Centers(0),y+Centers(1),z+Centers(2)]);
+    ThCrackFinal = ThCrackFinal + ThCrack;
+    iterAdd+=1;
+  }
+  return ThCrackFinal;
+}
+
+
+
+if(BoolCrack==1){
+  meshS ThExt = SurfaceHex(NbMeshExt, Domain, LExt, 1);
+  meshS ThCrack = AddCracks(NbCracks,MeshPerLambdas,CrackCenters,CrackDimensions,CrackOrientations,cracklabel);
+  meshS ThS = ThExt+ThCrack;
+  real[int] hole(3*CrackCenters.n);
+  int iterhole=0;
+  for(int i=0;i<CrackCenters.n;i++){
+    for(int j=0;j<3;j++){
+
+      hole(iterhole) = CrackCenters(i,j);
+      iterhole+=1;
+    }
+  }
+  real[int] domain = [0.49*DomainDepth,0.49*DomainWidth, 0.49*DomainHeight, 53, 0.001];
+  Th = tetg(ThS, switch="paAAQYY",
+      nbofholes=CrackCenters.n, holelist=hole, nbofregions=1, regionlist=domain);
+  }
+else if(BoolCrack==0){
+
+  Th = cube(NbMeshExt(0),NbMeshExt(1),NbMeshExt(2),
+  [DomainDepth*(x-.5),DomainWidth*(y-.5),DomainHeight*(z-.5)],
+  label=l6
+  );
+}
+
+if(PlotFlag==1){
+meshS ThSensors = SurfaceHex(NbMeshSensors, Sensors, LExt, 1);
+meshS StemH=square3(10,10,[SensorDepth*(x-.5),SensorWidth*(y-.5),0],orientation=-1);
+meshS ThSampling = SurfaceHex(NbMeshSampling, Sampling, LExt, 1);
+plot(Th,ThSensors,StemH,ThSampling,wait=1,cmm="Geometry+SensorBox+SamplingBox");
+}

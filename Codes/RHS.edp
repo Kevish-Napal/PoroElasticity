@@ -1,0 +1,176 @@
+int NbEmitter = EmitterEnd - EmitterBegin + 1;
+
+
+string StrEmitterBegin = EmitterBegin;
+string StrEmitterEnd = EmitterEnd;
+string StrSplitEmitter = StrEmitterBegin + "-" + StrEmitterEnd;
+cout << "Split Emitters: " << StrSplitEmitter << endl;
+
+
+cout << "NbEmitter" << NbEmitter << endl;
+
+cout << "sdgadtg " << NbReceptor << endl;
+string DataFileOutput = "Data_" + SourceType[ChooseSourceType];
+exec("mkdir " + DataFileOutput);
+
+real DiracAmplitude = 10;
+real DiracMagnitude = 100;
+
+
+real[int,int] UXR(NbReceptor,NbEmitter);
+real[int,int] UXI(NbReceptor,NbEmitter);
+real[int,int] UYR(NbReceptor,NbEmitter);
+real[int,int] UYI(NbReceptor,NbEmitter);
+real[int,int] UZR(NbReceptor,NbEmitter);
+real[int,int] UZI(NbReceptor,NbEmitter);
+real[int,int] WXR(NbReceptor,NbEmitter);
+real[int,int] WXI(NbReceptor,NbEmitter);
+real[int,int] WYR(NbReceptor,NbEmitter);
+real[int,int] WYI(NbReceptor,NbEmitter);
+real[int,int] WZR(NbReceptor,NbEmitter);
+real[int,int] WZI(NbReceptor,NbEmitter);
+real[int,int] PR(NbReceptor,NbEmitter);
+real[int,int] PI(NbReceptor,NbEmitter);
+
+real ReceptorX,ReceptorY,ReceptorZ;
+
+for(int i=0; i<NbEmitter;i++)
+{
+  int iE = EmitterBegin + i;
+  if(ChooseSourceType == 0){
+    f1x = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x-Z(iE,0))^2+(y-Z(iE,1))^2+(z-Z(iE,2))^2));
+  }
+
+  if(ChooseSourceType == 1){
+    f1y = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x-Z(iE,0))^2+(y-Z(iE,1))^2+(z-Z(iE,2))^2));
+  }
+
+  if(ChooseSourceType == 2){
+    f1z = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x-Z(iE,0))^2+(y-Z(iE,1))^2+(z-Z(iE,2))^2));
+  }
+
+  if(ChooseSourceType == 3){
+    f2x = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x-Z(iE,0))^2+(y-Z(iE,1))^2+(z-Z(iE,2))^2));
+  }
+
+  F1x = f1x-rhof/rhom*f2x;
+  F1y = f1y-rhof/rhom*f2y;
+  F1z = f1z-rhof/rhom*f2z;
+  F2 = div(f2x,f2y,f2z);
+
+  Y = SourceTerm(0,Xh);
+
+  if(PlotFlag==1){
+    plot(f1z,wait=1);
+  }
+
+
+  timer = clock();
+  X = A^-1 * Y;
+  cout << "VarUP, time/Emitter:" << clock() - timer << endl;
+  ux[]=X;
+
+  // computation of w from the solutions u, p
+  wx = ((f2x + dx(p))/om^2 - rhof*ux)/rhom;
+  wy = ((f2y + dy(p))/om^2 - rhof*uy)/rhom;
+  wz = ((f2z + dz(p))/om^2 - rhof*uz)/rhom;
+
+  for(int j=0;j<NbReceptor;j++)
+  {
+    ReceptorX = SensorList(j,1); ReceptorY = SensorList(j,2); ReceptorZ = SensorList(j,3);
+
+    UXR(j,i) = real(ux(ReceptorX,ReceptorY,ReceptorZ)); UYR(j,i) = real(uy(ReceptorX,ReceptorY,ReceptorZ));
+    UXI(j,i) = imag(ux(ReceptorX,ReceptorY,ReceptorZ)); UYI(j,i) = imag(uy(ReceptorX,ReceptorY,ReceptorZ));
+    UZI(j,i) = imag(uz(ReceptorX,ReceptorY,ReceptorZ)); UZR(j,i) = real(uz(ReceptorX,ReceptorY,ReceptorZ));
+
+
+    WXI(j,i) = imag(wx(ReceptorX,ReceptorY,ReceptorZ)); WYI(j,i) = imag(wy(ReceptorX,ReceptorY,ReceptorZ));
+    WXR(j,i) = real(wx(ReceptorX,ReceptorY,ReceptorZ)); WYR(j,i) = real(wy(ReceptorX,ReceptorY,ReceptorZ));
+    WZI(j,i) = imag(wz(ReceptorX,ReceptorY,ReceptorZ)); WZR(j,i) = real(wz(ReceptorX,ReceptorY,ReceptorZ));
+
+    PR(j,i) = real(p(ReceptorX,ReceptorY,ReceptorZ)); PI(j,i) = imag(p(ReceptorX,ReceptorY,ReceptorZ));
+  }
+
+
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UXR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UXR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UXI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UXI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UYR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UYR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UYI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UYI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UZR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UZR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/UZI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << UZI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WXR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WXR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WXI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WXI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WYR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WYR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WYI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WYI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WZR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WZR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/WZI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << WZI;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/PR_" + StrSplitEmitter + ".dat",append);
+    fileoutput << PR;
+    } ;
+
+    {
+    ofstream fileoutput(DataFileOutput + "/PI_" + StrSplitEmitter + ".dat",append);
+    fileoutput << PI;
+    } ;
+
+//
+// exec("mkdir Plots");
+//       savemesh(Th,"Plots/Poro3d.mesh");
+//       ffSaveVh(Th,Vh,"Plots/Vh.txt");
+//       ffSaveData(f1z,"Plots/f1z.txt");
+//       ffSaveData(ux,"Plots/ux.txt");
+//       ffSaveData(uy,"Plots/uy.txt");
+//       ffSaveData(uz,"Plots/uz.txt");
+//       ffSaveData(p,"Plots/p.txt");
+
+}

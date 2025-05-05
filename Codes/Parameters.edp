@@ -1,0 +1,24 @@
+
+
+real om = 3.91;
+real mu = 1.;
+real rho = 2.27;
+real rhowater = 10^3;
+real mus = 5.85e9;
+real b0 = 5.5e8/om;
+
+cout << "---------- Parameters ----------" << endl;
+cout << "Source Type: " << SourceType[ChooseSourceType] << endl;
+cout << "omega = " << om << endl;
+real lambda = 0.47;
+real rhof = 1.0;
+
+real beta = 0.83;
+real M = 1.66;
+
+complex rhom = 8.2+1i*1.66e0;//e4;
+cout << "rhom: " << rhom << endl;
+
+
+real lambdas = 2*pi*sqrt(mu/rho)/om;
+cout << "lambdas: " << lambdas << endl<<endl;

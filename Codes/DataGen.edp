@@ -1,0 +1,38 @@
+include "Codes/VarUP.edp"
+
+
+real DiracAmplitude = 1;
+real DiracMagnitude = 1000;
+
+      f1z = DiracMagnitude*DiracAmplitude*Dirac3(DiracAmplitude*((x)^2+(y)^2+(z)^2));
+      F1x = f1x-rhof/rhom*f2x;
+      F1y = f1y-rhof/rhom*f2y;
+      F1z = f1z-rhof/rhom*f2z;
+      F2 = div(f2x,f2y,f2z);
+
+      plot(f1z,wait =1,fill=1,cmm="f1z");
+
+      timer = clock();
+      VarUP;
+      cout << "VarUP, time/Emitter:" << clock() - timer << endl;
+
+      // Vh PlotTemp = real(ux);
+      //plot(PlotTemp,wait=1,cmm="real(ux)");
+
+      // computation of w from the solutions u, p
+      wx = ((f2x + dx(p))/om^2 - rhof*ux)/rhom;
+      wy = ((f2y + dy(p))/om^2 - rhof*uy)/rhom;
+      wz = ((f2z + dz(p))/om^2 - rhof*uz)/rhom;
+
+
+      exec("mkdir Plots");
+      savemesh(Th,"Plots/Poro3d.mesh");
+      ffSaveVh(Th,Vh,"Plots/Vh.txt");
+      ffSaveData(f1z,"Plots/f1z.txt");
+      ffSaveData(ux,"Plots/ux.txt");
+      ffSaveData(uy,"Plots/uy.txt");
+      ffSaveData(uz,"Plots/uz.txt");
+      ffSaveData(wx,"Plots/wx.txt");
+      ffSaveData(wy,"Plots/wy.txt");
+      ffSaveData(wz,"Plots/wz.txt");
+      ffSaveData(p,"Plots/p.txt");
